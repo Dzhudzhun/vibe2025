@@ -9,7 +9,7 @@ const PORT = 3000;
 const dbConfig = {
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: '123321',
     database: 'todolist',
 };
 
@@ -35,6 +35,19 @@ async function addListItem(text) {
         return { id: result.insertId, text };
     } catch (error) {
         console.error('Error adding list item:', error);
+        throw error;
+    }
+}
+
+async function deleteListItem(id) {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const query = 'DELETE FROM items WHERE id = ?';
+        const [result] = await connection.execute(query, [id]);
+        await connection.end();
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error deleting list item:', error);
         throw error;
     }
 }
@@ -87,6 +100,29 @@ async function handleRequest(req, res) {
                 });
                 res.end(JSON.stringify(newItem));
             });
+        } catch (error) {
+            console.error(error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal server error' }));
+        }
+    } else if (req.url.startsWith('/api/items/') && req.method === 'DELETE') {
+        try {
+            const id = req.url.split('/')[3];
+            if (!id || isNaN(id)) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid ID' }));
+                return;
+            }
+
+            const deleted = await deleteListItem(id);
+            if (!deleted) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Item not found' }));
+                return;
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
         } catch (error) {
             console.error(error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
