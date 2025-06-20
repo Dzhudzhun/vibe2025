@@ -5,3 +5,5 @@ good! now based on the code already written, implement the ability to delete ele
 Great! now based on the code already written, implement the ability to edit elements in the list
 
 implement authentication based on the code already written
+
+implement a simple way to integrate with telegram based on the written code. The bot should be able to add and delete items from the to do list
