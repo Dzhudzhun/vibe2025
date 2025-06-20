@@ -1,0 +1,5 @@
+based on the code already written, implement the ability to add elements to the list
+
+good! now based on the code already written, implement the ability to delete elements from the list
+
+Great! now based on the code already written, implement the ability to edit elements in the list
