@@ -8,97 +8,135 @@
         body {
             font-family: Arial, sans-serif;
         }
+
         #todoList {
             border-collapse: collapse;
             width: 70%;
             margin: 0 auto;
         }
-        #todoList th, #todoList td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        #todoList th {
-            background-color: #f0f0f0;
-        }
-        #todoList th:first-child, #todoList th:last-child {
-            width: 5%;
-        }
-        #todoList th:nth-child(2) {
-            width: 90%;
-        }
+
+            #todoList th, #todoList td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+
+            #todoList th {
+                background-color: #f0f0f0;
+            }
+
+                #todoList th:first-child, #todoList th:last-child {
+                    width: 5%;
+                }
+
+                #todoList th:nth-child(2) {
+                    width: 90%;
+                }
+
         .add-form {
             margin-top: 20px;
             width: 70%;
             margin: 20px auto;
         }
-        .add-form input[type="text"] {
-            padding: 8px;
-            width: 70%;
-        }
-        .add-form button {
-            padding: 8px;
-            width: 20%;
+
+            .add-form input[type="text"] {
+                padding: 8px;
+                width: 70%;
+            }
+
+            .add-form button {
+                padding: 8px;
+                width: 20%;
+            }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
 
-<h2 style="text-align: center;">To-Do List</h2>
+    <h2 style="text-align: center;">To-Do List</h2>
+    <div id="error" class="error"></div>
 
-<table id="todoList">
-    <thead>
-        <tr>
-            <th>Number</th>
-            <th>Text</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody id="listBody">
-        {{rows}}
-    </tbody>
-</table>
+    <table id="todoList">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Text</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="listBody">
+            {{rows}}
+        </tbody>
+    </table>
 
-<div class="add-form">
-    <input type="text" id="newItem" placeholder="Enter new item">
-    <button onclick="addItem()">Add</button>
-</div>
+    <div class="add-form">
+        <input type="text" id="newItem" placeholder="Enter new item">
+        <button onclick="addItem()">Add</button>
+    </div>
 
-<script>
-    let items = [];
-    let nextId = 1;
+    <script>
+        async function addItem() {
+            const newItemInput = document.getElementById('newItem');
+            const newItemText = newItemInput.value.trim();
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = '';
 
-    function renderList() {
-        const listBody = document.getElementById('listBody');
-        listBody.innerHTML = '';
+            if (!newItemText) {
+                errorElement.textContent = 'Please enter a task';
+                return;
+            }
 
-        items.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.text}</td>
-                <td><button onclick="removeItem(${index})">Remove</button></td>
-            `;
-            listBody.appendChild(row);
-        });
-    }
+            try {
+                const response = await fetch('/api/items', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: newItemText })
+                });
 
-    function addItem() {
-        const newItemInput = document.getElementById('newItem');
-        const newItemText = newItemInput.value.trim();
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to add item');
+                }
 
-        if (newItemText) {
-            items.push({ id: nextId++, text: newItemText });
-            newItemInput.value = '';
-            renderList();
+                // Reload the page to show the updated list
+                window.location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+                errorElement.textContent = error.message;
+            }
         }
-    }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderList();
-    }
-</script>
+        async function removeItem(id) {
+            try {
+                const response = await fetch(`/api/items/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove item');
+                }
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error').textContent = error.message;
+            }
+        }
+
+        // Add event listener for Enter key
+        document.getElementById('newItem').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                addItem();
+            }
+        });
+    </script>
 
 </body>
 </html>
